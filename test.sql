@@ -1,90 +1,54 @@
-WITH sign_in as (SELECT DISTINCT website.membership_sign_in.customer_id FROM website.membership_sign_in 
-WHERE website.membership_sign_in.tracked_time >= timestamp '2023-06-13 00:00:00' 
-AND website.membership_sign_in.tracked_time <= timestamp '2023-07-06 00:00:00'), 
-product_view as (SELECT DISTINCT website.view_product.customer_id FROM website.view_product
-WHERE website.view_product.tracked_time >= timestamp '2023-06-13 00:00:00' 
-AND website.view_product.tracked_time <= timestamp '2023-07-06 00:00:00')
-select DISTINCT sign_in.customer_id, c.email FROM sign_in
-LEFT JOIN bos.customers as c ON pv.customer_id = c.customer_id
-LEFT JOIN product_view as pv ON pv.customer_id = sign_in.customer_id
-
-SELECT DISTINCT c.email
-FROM bos.customers AS c
-JOIN website.membership_sign_in AS msi ON c.customer_id = msi.customer_id
-WHERE msi.tracked_time >= timestamp '2023-06-13 00:00:00' and msi.tracked_time <= timestamp '2023-07-06 00:00:00'
-
-
-WITH sign_in as (SELECT DISTINCT website.membership_sign_in.customer_id FROM website.membership_sign_in 
-WHERE website.membership_sign_in.tracked_time > timestamp '2023-06-30 00:00:00' 
-AND website.membership_sign_in.tracked_time < timestamp '2023-08-01 00:00:00')
-, 
-product_view as (SELECT DISTINCT website.view_product.customer_id FROM website.view_product
-WHERE website.view_product.tracked_time > timestamp '2023-06-30 00:00:00' 
-AND website.view_product.tracked_time < timestamp '2023-08-01 00:00:00')
-,
-clicks_engagements as (SELECT DISTINCT website.clicks_and_engagements.customer_id FROM website.clicks_and_engagements
-WHERE website.clicks_and_engagements.tracked_time > timestamp '2023-06-30 00:00:00'
-AND website.clicks_and_engagements.tracked_time < timestamp '2023-08-01 00:00:00')
-,
-join_three as (select DISTINCT pv.customer_id FROM product_view as pv
-FULL OUTER JOIN sign_in ON pv.customer_id = sign_in.customer_id
-FULL OUTER JOIN clicks_engagements ON pv.customer_id = clicks_engagements.customer_id)
-SELECT DISTINCT c.email, c.customer_id from bos.customers as c
-INNER JOIN join_three as jt ON c.customer_id = jt.customer_id
-
-WHERE DATE(cr.tracked_time) = DATE '2023-08-22';
+SELECT main.date, main.campaign_name, main.impressions, main.clicks_all, subquery.sum_impressions, subquery.count_impressions
+FROM `dax-dmp.citroen_supermetrics.fb` AS main
+JOIN (
+    SELECT campaign_name, SUM(impressions) as sum_impressions, COUNT(impressions) as count_impressions
+    FROM `dax-dmp.citroen_supermetrics.fb`
+    WHERE date BETWEEN '2023-08-01' AND '2023-08-07'
+    GROUP BY campaign_name
+) AS subquery
+ON main.campaign_name = subquery.campaign_name
+WHERE main.date BETWEEN '2023-08-01' AND '2023-08-07'
+ORDER BY main.date asc, main.campaign_name asc;
 
 
 
-
-
-
-
-WITH sign_in as (SELECT DISTINCT website.membership_sign_in.customer_id FROM website.membership_sign_in 
-WHERE website.membership_sign_in.tracked_time > timestamp '2023-06-30 00:00:00' 
-AND website.membership_sign_in.tracked_time < timestamp '2023-08-01 00:00:00')
-, 
-product_view as (SELECT DISTINCT website.view_product.customer_id FROM website.view_product
-WHERE website.view_product.tracked_time > timestamp '2023-06-30 00:00:00' 
-AND website.view_product.tracked_time < timestamp '2023-08-01 00:00:00')
-,
-clicks_engagements as (SELECT DISTINCT website.clicks_and_engagements.customer_id FROM website.clicks_and_engagements
-WHERE website.clicks_and_engagements.tracked_time > timestamp '2023-06-30 00:00:00'
-AND website.clicks_and_engagements.tracked_time < timestamp '2023-08-01 00:00:00')
-,
-join_three AS (
-  SELECT DISTINCT COALESCE(msi.customer_id, pv.customer_id, ce.customer_id) AS customer_id
-  FROM sign_in AS msi
-  FULL OUTER JOIN product_view AS pv ON msi.customer_id = pv.customer_id
-  FULL OUTER JOIN clicks_engagements AS ce ON msi.customer_id = ce.customer_id
-)
-SELECT DISTINCT COALESCE(c.customer_id, jt.customer_id) AS customer_id
-FROM bos.customers AS c
-INNER JOIN join_three AS jt ON c.customer_id = jt.customer_id;
-
-
-
-
-
-
-WITH sign_in as (SELECT DISTINCT website.membership_sign_in.customer_id FROM website.membership_sign_in 
-WHERE website.membership_sign_in.tracked_time BETWEEN timestamp '2023-07-08 00:00:00'
-AND timestamp '2023-08-07 00:00:00')
-, 
-product_view as (SELECT DISTINCT website.view_product.customer_id FROM website.view_product
-WHERE website.view_product.tracked_time BETWEEN timestamp '2023-07-08 00:00:00'
-AND timestamp '2023-08-07 00:00:00')
-,
-clicks_engagements as (SELECT DISTINCT website.clicks_and_engagements.customer_id FROM website.clicks_and_engagements
-WHERE website.clicks_and_engagements.tracked_time BETWEEN timestamp '2023-07-08 00:00:00'
-AND timestamp '2023-08-07 00:00:00')
-,
-join_three AS (
-  SELECT DISTINCT COALESCE(msi.customer_id, pv.customer_id, ce.customer_id) AS customer_id
-  FROM sign_in AS msi
-  FULL OUTER JOIN product_view AS pv ON msi.customer_id = pv.customer_id
-  FULL OUTER JOIN clicks_engagements AS ce ON msi.customer_id = ce.customer_id
-)
-SELECT DISTINCT c.email FROM bos.customers AS c
-LEFT JOIN join_three AS jt ON c.customer_id = jt.customer_id
-WHERE jt.customer_id IS NULL
+-- query untuk menampilkan data conversion di BQ berdasarkan utm campaign_name
+WITH test_drive AS
+(
+  SELECT *
+  FROM `prod-nissan-indonesia.leads_utm_v2.test_drive_utm_matched_v2`
+),
+download_brochure AS
+(
+  SELECT *
+  FROM `prod-nissan-indonesia.leads_utm_v2.download_brochure_utm_matched_v2`
+  SUBSTR()
+),
+offer AS
+(
+  SELECT *
+  FROM `prod-nissan-indonesia.leads_utm_v2.offer_utm_matched_v2`
+),
+quote AS
+(
+  SELECT *
+  FROM `prod-nissan-indonesia.leads_utm_v2.quote_utm_matched_v2`
+),
+count_leads AS (
+SELECT 'test drive' as lead_type, COUNT(*) as lead_count
+FROM test_drive
+WHERE utm_campaign = 'Terra_Aug_Sep_2023_FBIG_Conversion_Leads_Form' AND created_at BETWEEN '2023-08-01' AND '2023-08-31'
+UNION ALL
+SELECT 'download brochure' as lead_type, COUNT(*) as lead_count
+FROM download_brochure
+WHERE utm_campaign = 'Terra_Aug_Sep_2023_FBIG_Conversion_Leads_Form' AND created_at BETWEEN '2023-08-01' AND '2023-08-31'
+UNION ALL
+SELECT 'offer' as lead_type, COUNT(*) as lead_count
+FROM offer
+WHERE utm_campaign = 'Terra_Aug_Sep_2023_FBIG_Conversion_Leads_Form' AND created_at BETWEEN '2023-08-01' AND '2023-08-31'
+UNION ALL
+SELECT 'quote' as lead_type, COUNT(*) as lead_count
+FROM quote
+WHERE utm_campaign = 'Terra_Aug_Sep_2023_FBIG_Conversion_Leads_Form' AND created_at BETWEEN '2023-08-01' AND '2023-08-31')
+SELECT *
+FROM count_leads
