@@ -1,0 +1,9 @@
+select bos.customers.email, bos.customers.name from bos.customers where bos.customers.email LIKE '%%' ;
+
+select bos.campaign.destination_id,bos.campaign.status, bos.campaign.label_ids,bos.campaign.c_user_id, bos.campaign.channel_name, bos.campaign.end_date, bos.campaign.ctime from bos.campaign
+
+//website view
+SELECT website.view_pageview.user_id FROM website.view_pageview
+
+//visitor
+SELECT bos.users.name FROM bos.users LIMIT 100
