@@ -95,3 +95,17 @@ FROM
   final_Intradata
 GROUP BY
   event_date, event_name, default_channel_grouping;
+
+
+
+--ambil intraday cmn 2 tahun (pake Union)
+SELECT FORMAT_DATE('%d-%m-%Y', PARSE_DATE('%Y%m%d', event_date)) as event_date, user_pseudo_id, event_name
+FROM `prod-nissan-indonesia.analytics_262674952.events_intraday_2024*`
+WHERE event_date >= '20240101'
+
+UNION ALL
+
+SELECT FORMAT_DATE('%d-%m-%Y', PARSE_DATE('%Y%m%d', event_date))as event_date, user_pseudo_id, event_name
+FROM `prod-nissan-indonesia.analytics_262674952.events_intraday_2023*`
+WHERE event_date >= '20230301'
+ORDER BY event_date ASC
