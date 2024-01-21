@@ -109,3 +109,56 @@ SELECT FORMAT_DATE('%d-%m-%Y', PARSE_DATE('%Y%m%d', event_date))as event_date, u
 FROM `prod-nissan-indonesia.analytics_262674952.events_intraday_2023*`
 WHERE event_date >= '20230301'
 ORDER BY event_date ASC
+
+--Select event_params in BQ
+SELECT
+  DISTINCT
+  traffic_source.medium as traffic_source_medium,
+  (select value.string_value from unnest(event_params) where key = 'medium') as medium_param,
+  collected_traffic_source.manual_medium as manual_medium,
+  collected_traffic_source.gclid as source_gclid, 
+  collected_traffic_source.dclid as source_dclid, 
+  collected_traffic_source.srsltid as source_srsltid
+  FROM
+  `mitutoyo-production.analytics_282716579.events_intraday_2023*`
+
+
+--fungsi extrack tanggal
+SELECT c.date, 
+min(c.date),
+extract(YEAR FROM c.date) as YEAR,
+extract(MONTH FROM c.date) as month,
+extract(DAY FROM c.date) as day,
+c.campaign_name, n.frequency
+FROM (SELECT date, campaign_name, impressions from dax-dmp.citroen_supermetrics.fb) as c
+INNER JOIN (select date, frequency from dax-dmp.nissan_fb_ads.fb) as n USING(date)
+where c.impressions >= 20
+group by 1,3,4,5,6,7
+
+
+--soal Shopee SQL
+--SOAL1
+SELECT CITY, SUM(DISTINCT ORDER) AS TOTAL ORDER, MIN(ORDER_ID) as first_order --cukup gunakan min() untuk mengambil first order)
+FROM CUSTOMER AS C
+JOIN ORDERS USING(customer_id)
+GROUP BY 1
+
+--SOAL TEST DI BQ
+SELECT 
+  FORMAT_DATE('%Y-%m-%d', PARSE_DATE('%Y%m%d',event_date)) as event_date,
+  event_name,
+  (select value.string_value from unnest(event_params) where key = 'page_location') as page_location,
+  min(user_pseudo_id) as user_id,
+FROM `prod-nissan-indonesia.analytics_262674952.events_intraday_202401*`
+group by 1,2,3
+
+UNION ALL
+
+SELECT 
+  FORMAT_DATE('%Y-%m-%d', PARSE_DATE('%Y%m%d',event_date)) as event_date,
+  event_name,
+  (select value.string_value from unnest(event_params) where key = 'page_location') as page_location,
+  min(user_pseudo_id) as user_id,
+FROM `prod-nissan-indonesia.analytics_262674952.events_intraday_202312*`
+group by 1,2,3
+order by user_id asc
