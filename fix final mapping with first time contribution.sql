@@ -224,5 +224,5 @@ WHERE NOT EXISTS (
         AND m.email = u.email
         AND m.created_at = u.created_at
         AND m.car_name = u.car_name
-)
+) --mengambil daftar lead yang sudah ada di utm table untuk dikeluarkan dari selection
 ORDER BY m.created_at ASC;
