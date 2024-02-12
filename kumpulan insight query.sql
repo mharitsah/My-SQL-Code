@@ -87,7 +87,8 @@ SELECT
   event_name,
   default_channel_grouping,
   SUM(total_users) AS total_users,
-  SUM(CASE WHEN default_channel_grouping LIKE '%Paid%' THEN total_users ELSE 0 END) AS paid_users,
+  --then total_users berarti mengembalikan jumlah user yang berasal dari channel paid, jika then 1 maka belum tentu benar karena jika angka paid 5 orang dan malah dihitung then 1 maka 4 orang user akan hilang.
+  SUM(CASE WHEN default_channel_grouping LIKE '%Paid%' THEN total_users ELSE 0 END) AS paid_users, 
   SUM(CASE WHEN default_channel_grouping NOT LIKE '%Paid Search/Display%' THEN total_users ELSE 0 END) AS non_paid_users,
   SUM(CASE WHEN default_channel_grouping LIKE '%Paid%' AND event_name LIKE '%Registration Success%' THEN total_users ELSE 0 END) AS membership_paid_users,
   SUM(CASE WHEN default_channel_grouping NOT LIKE '%Paid Search/Display%' AND event_name LIKE '%Registration Success%' THEN total_users ELSE 0 END) AS membership_non_paid_users
@@ -129,7 +130,8 @@ min(c.date),
 extract(YEAR FROM c.date) as YEAR,
 extract(MONTH FROM c.date) as month,
 extract(DAY FROM c.date) as day,
-c.campaign_name, n.frequency
+c.campaign_name, 
+n.frequency
 FROM (SELECT date, campaign_name, impressions from dax-dmp.citroen_supermetrics.fb) as c
 INNER JOIN (select date, frequency from dax-dmp.nissan_fb_ads.fb) as n USING(date)
 where c.impressions >= 20
@@ -138,7 +140,7 @@ group by 1,3,4,5,6,7
 
 --soal Shopee SQL
 --SOAL1
-SELECT CITY, SUM(DISTINCT ORDER) AS TOTAL ORDER, MIN(ORDER_ID) as first_order --cukup gunakan min() untuk mengambil first order)
+SELECT CITY, SUM(ORDER) AS TOTAL ORDER, MIN(ORDER_ID) as first_order --cukup gunakan min() untuk mengambil first order)
 FROM CUSTOMER AS C
 JOIN ORDERS USING(customer_id)
 GROUP BY 1
@@ -162,3 +164,25 @@ SELECT
 FROM `prod-nissan-indonesia.analytics_262674952.events_intraday_202312*`
 group by 1,2,3
 order by user_id asc
+
+--Test BQ 2
+with intradata as 
+(SELECT 
+  FORMAT_DATE('%Y-%m-%d', PARSE_DATE('%Y%m%d',event_date)) as event_date,
+  event_name,
+  (select value.string_value from unnest(event_params) where key = 'page_location') as page_location,
+  min(user_pseudo_id) as user_id,
+FROM `prod-nissan-indonesia.analytics_262674952.events_intraday_202401*`
+group by 1,2,3)
+
+select 
+  event_date,
+  max(
+  case
+    when regexp_contains(page_location, r'(serena|terra)') THEN 'Type 1'
+    when regexp_contains(page_location, r'(magnite|kicks)') THEN 'Type 2'
+  ELSE 'Type 3'
+  END) as type_of_car
+    FROM intradata
+  group by 1
+  ORDER BY event_date
