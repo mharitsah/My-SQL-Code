@@ -186,3 +186,70 @@ select
     FROM intradata
   group by 1
   ORDER BY event_date
+
+
+
+select round(LONG_W, 4) from station
+where LAT_N = (select max(LAT_N) from station where LAT_N < 137.2345)
+
+
+
+--menambah kolom setelah select all (*)
+select *, count(*) over () as data from `prod-nissan-indonesia.nissan_leads_data.offer`
+
+
+--Nissan Leads data check 3 days query
+WITH check AS (
+  SELECT
+  description,
+  car_name,
+  created_at,
+  fullname,
+  phone,
+  email,
+  city,
+  estimated_buying_time,
+  referer,
+  CASE
+    WHEN total_row > 0 THEN CAST(total_row AS STRING)
+    ELSE NULL
+  END AS total_row
+FROM (
+  SELECT
+    description,
+    car_name,
+    created_at,
+    customer.fullname,
+    customer.phone,
+    customer.email,
+    customer.city,
+    customer.estimated_buying_time,
+    customer.referer,
+    COUNT(*) OVER () AS total_row
+  FROM `prod-nissan-indonesia.nissan_leads_data.offer`
+  WHERE datetime(timestamp(created_at)) >= DATE_SUB(current_date(), INTERVAL 3 DAY)
+) AS main_query
+
+UNION ALL
+
+SELECT
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  "There is no data" AS total_row
+FROM (SELECT 1)
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM `prod-nissan-indonesia.nissan_leads_data.offer`
+  WHERE datetime(timestamp(created_at)) >= DATE_SUB(current_date(), INTERVAL 3 DAY)
+)
+ORDER BY created_at DESC
+)
+
+select 1/0 from check where total_row = 'There is no data'

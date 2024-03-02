@@ -253,7 +253,7 @@ SELECT
 WHERE
 RowNum = 1
 AND
-NOT EXISTS (
+S (
     SELECT 1
     FROM from_utm_table AS u
     WHERE 
